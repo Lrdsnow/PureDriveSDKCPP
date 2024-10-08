@@ -7,7 +7,7 @@
 #include <map>
 #include <memory>
 #include <simpleble/SimpleBLE.h>
-#include "helpers.hpp"
+//#include "helpers.hpp"
 #include "anki_sdk/protocol.h"
 #include "VehicleDelegate.hpp"
 
@@ -73,18 +73,21 @@ public:
             
             if (!manufacturerDataMap.empty()) {
                 auto it = manufacturerDataMap.begin();
-                const kvn::bytearray& byteArray = it->second;
+                const SimpleBLE::ByteArray byteArray = it->second;
                 std::vector<uint8_t> manufacturerData(byteArray.begin(), byteArray.end());
                 uint8_t modelData = (manufacturerData.size() > 2) ? manufacturerData[2] : 0;
                 if (modelData != 0x00) {
-                    std::cout << "Found Car: " << getCarName(modelData) << " @ " << peripheral.address() << std::endl;
+                    std::string carName = getCarName(modelData);
+                    std::cout << "Found Car: " << carName << " @ " << peripheral.address() << std::endl;
+                    VehicleAdvData advData = VehicleAdvData(carName, peripheral.address(), PeripheralState::Disconnected);
+                    discoveredVehicles.push_back(std::make_unique<VehicleDelegate>(this, peripheral, advData));
                 }
             } else {
                 std::cout << "No manufacturer data available." << std::endl;
             }
         });
 
-        adapter.scan_for(10000);  // Scan for 10 seconds (or use another condition)
+        adapter.scan_for(1000000);
     }
 };
 
@@ -93,7 +96,7 @@ int main() {
     BluetoothManager manager;
     manager.startScanning();
 
-    std::this_thread::sleep_for(std::chrono::seconds(10));  // Simulate scanning for 10 seconds
+    std::this_thread::sleep_for(std::chrono::seconds(10000));  // Simulate scanning for 10 seconds
 
     manager.stopScanning();
     return 0;

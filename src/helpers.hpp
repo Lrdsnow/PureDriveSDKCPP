@@ -14,3 +14,27 @@ std::string getTrackName(uint8_t trackId);
 
 // gattlib error handling
 std::string getGattlibErrorString(int error_code);
+
+enum class PeripheralState {
+    Disconnected,
+    Connecting,
+    Connected,
+    Disconnecting
+};
+
+struct VehicleAdvData {
+public:
+    std::string carName;
+    std::string address;
+    PeripheralState state;
+
+    VehicleAdvData(const std::string& carName, const SimpleBLE::BluetoothUUID address, PeripheralState state) 
+        : carName(carName), address(address), state(state) {
+
+    }
+
+    friend std::ostream& operator<<(std::ostream& os, const VehicleAdvData& v) {
+        os << "Car Name: " << v.carName << ", Address: " << v.address << ", State: " << static_cast<int>(v.state);
+        return os;
+    }
+};
