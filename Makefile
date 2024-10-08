@@ -1,7 +1,7 @@
 # Compiler and flags
 CXX = g++
 CXXFLAGS = -Wall -std=c++17 -O2
-LDFLAGS = -lbluetooth -lgattlib -pthread
+LDFLAGS = -lbluetooth -lgattlib -ldbus-1 -pthread -lsimpleble
 
 # Directories
 SRC_DIR = src

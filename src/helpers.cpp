@@ -38,3 +38,52 @@ std::string getTrackName(uint8_t trackId) {
         default: return "Unknown";
     }
 }
+
+std::string getGattlibErrorString(int error_code) {
+    switch (error_code) {
+        case GATTLIB_SUCCESS:
+            return "Success";
+        case GATTLIB_INVALID_PARAMETER:
+            return "Invalid Parameter";
+        case GATTLIB_NOT_FOUND:
+            return "Not Found";
+        case GATTLIB_TIMEOUT:
+            return "Timeout";
+        case GATTLIB_OUT_OF_MEMORY:
+            return "Out of Memory";
+        case GATTLIB_NOT_SUPPORTED:
+            return "Not Supported";
+        case GATTLIB_DEVICE_ERROR:
+            return "Device Error";
+        case GATTLIB_DEVICE_NOT_CONNECTED:
+            return "Device Not Connected";
+        case GATTLIB_NO_ADAPTER:
+            return "No Adapter";
+        case GATTLIB_BUSY:
+            return "Busy";
+        case GATTLIB_UNEXPECTED:
+            return "Unexpected Error";
+        case GATTLIB_ADAPTER_CLOSE:
+            return "Adapter Closed";
+        case GATTLIB_DEVICE_DISCONNECTED:
+            return "Device Disconnected";
+        default:
+            if (error_code & GATTLIB_ERROR_MODULE_MASK) {
+                if (error_code & GATTLIB_ERROR_DBUS) {
+                    return "DBus Error";
+                } else if (error_code & GATTLIB_ERROR_BLUEZ) {
+                    return "BlueZ Error";
+                } else if (error_code & GATTLIB_ERROR_UNIX) {
+                    return "Unix Error";
+                } else if (error_code & GATTLIB_ERROR_INTERNAL) {
+                    return "Internal Error";
+                } else {
+                    return "Unknown Module Error";
+                }
+            } else {
+                std::ostringstream oss;
+                oss << "Unknown Error (code: " << error_code << ")";
+                return oss.str();
+            }
+    }
+}
