@@ -1,0 +1,11 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: PureDriveSDKCPP
+Upstream-Contact: Lrdsnow <lrdsnow101@gmail.com>
+Source: https://github.com/Lrdsnow/PureDriveSDKCPP
+
+Files: *
+Copyright: Copyright 2024 Lrdsnow
+License: GNU Affero General Public License 3.0 (AGPL-3.0)
+License-Reference: https://www.gnu.org/licenses/agpl-3.0.html
+
+Comment: This Project requires SimpleBLE which is licesned under GPLv3

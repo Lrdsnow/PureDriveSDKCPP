@@ -1,29 +1,27 @@
 #include "helpers.hpp"
 
 // Utility functions
-std::string getCarName(uint8_t modelId) {
-    switch (modelId) {
-        case 0x01: return "kourai";
-        case 0x02: return "boson";
-        case 0x03: return "rho";
-        case 0x04: return "katal";
-        case 0x05: return "hadion";
-        case 0x06: return "spektrix";
-        case 0x07: return "corax";
-        case 0x08: return "groundshock";
-        case 0x09: return "skull";
-        case 0x0A: return "thermo";
-        case 0x0B: return "nuke";
-        case 0x0C: return "guardian";
-        case 0x0E: return "bigbang";
-        case 0x0F: return "freewheel";
-        case 0x10: return "x52";
-        case 0x11: return "x52ice";
-        case 0x12: return "mammoth";
-        case 0x13: return "dynamo";
-        case 0x14: return "ghost";
-        default: return "unknown";
-    }
+std::string getCarName(const std::string& modelId) {
+    if (modelId == "01") return "kourai";
+    else if (modelId == "02") return "boson";
+    else if (modelId == "03") return "rho";
+    else if (modelId == "04") return "katal";
+    else if (modelId == "05") return "hadion";
+    else if (modelId == "06") return "spektrix";
+    else if (modelId == "07") return "corax";
+    else if (modelId == "08") return "groundshock";
+    else if (modelId == "09") return "skull";
+    else if (modelId == "0A") return "thermo";
+    else if (modelId == "0B") return "nuke";
+    else if (modelId == "0C") return "guardian";
+    else if (modelId == "0E") return "bigbang";
+    else if (modelId == "0F") return "freewheel";
+    else if (modelId == "10") return "x52";
+    else if (modelId == "11") return "x52ice";
+    else if (modelId == "12") return "mammoth";
+    else if (modelId == "13") return "dynamo";
+    else if (modelId == "14") return "ghost";
+    else return "unknown";
 }
 
 // Basic track name utility function
@@ -39,51 +37,43 @@ std::string getTrackName(uint8_t trackId) {
     }
 }
 
-std::string getGattlibErrorString(int error_code) {
-    switch (error_code) {
-        case GATTLIB_SUCCESS:
-            return "Success";
-        case GATTLIB_INVALID_PARAMETER:
-            return "Invalid Parameter";
-        case GATTLIB_NOT_FOUND:
-            return "Not Found";
-        case GATTLIB_TIMEOUT:
-            return "Timeout";
-        case GATTLIB_OUT_OF_MEMORY:
-            return "Out of Memory";
-        case GATTLIB_NOT_SUPPORTED:
-            return "Not Supported";
-        case GATTLIB_DEVICE_ERROR:
-            return "Device Error";
-        case GATTLIB_DEVICE_NOT_CONNECTED:
-            return "Device Not Connected";
-        case GATTLIB_NO_ADAPTER:
-            return "No Adapter";
-        case GATTLIB_BUSY:
-            return "Busy";
-        case GATTLIB_UNEXPECTED:
-            return "Unexpected Error";
-        case GATTLIB_ADAPTER_CLOSE:
-            return "Adapter Closed";
-        case GATTLIB_DEVICE_DISCONNECTED:
-            return "Device Disconnected";
-        default:
-            if (error_code & GATTLIB_ERROR_MODULE_MASK) {
-                if (error_code & GATTLIB_ERROR_DBUS) {
-                    return "DBus Error";
-                } else if (error_code & GATTLIB_ERROR_BLUEZ) {
-                    return "BlueZ Error";
-                } else if (error_code & GATTLIB_ERROR_UNIX) {
-                    return "Unix Error";
-                } else if (error_code & GATTLIB_ERROR_INTERNAL) {
-                    return "Internal Error";
+std::vector<std::tuple<std::string, bool, int>> filterDuplicates(const std::vector<std::tuple<std::string, bool, int>>& readings) {
+    std::vector<std::tuple<std::string, bool, int>> filteredReadings;
+
+    int i = 0;
+    while (i < readings.size()) {
+        auto current = readings[i];
+        std::string currentType = std::get<0>(current);
+        int currentPosition = std::get<2>(current);
+
+        filteredReadings.push_back(current);
+
+        int j = i + 1;
+        bool foundValidSuccessor = false;
+        while (j < readings.size()) {
+            auto next = readings[j];
+            std::string nextType = std::get<0>(next);
+            int nextPosition = std::get<2>(next);
+
+            if (nextType == currentType) {
+                if (nextPosition >= currentPosition) {
+                    foundValidSuccessor = true;
+                    break;
                 } else {
-                    return "Unknown Module Error";
+                    j++;
                 }
             } else {
-                std::ostringstream oss;
-                oss << "Unknown Error (code: " << error_code << ")";
-                return oss.str();
+                break;
             }
+        }
+
+        if (!foundValidSuccessor) {
+            filteredReadings.pop_back();
+            filteredReadings.push_back(current);
+        }
+
+        i = j;
     }
+
+    return filteredReadings;
 }

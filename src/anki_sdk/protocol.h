@@ -69,6 +69,9 @@ enum {
     ANKI_VEHICLE_MSG_V2C_OFFSET_FROM_ROAD_CENTER_UPDATE = 0x2d,
     ANKI_VEHICLE_MSG_V2C_SPEED_UPDATE = 0x36,
     ANKI_VEHICLE_MSG_V2C_TRACK_SPECIAL_TRIGGER = 0x53,
+    
+    // Turn Command
+    ANKI_VEHICLE_MSG_C2V_TURN = 0x32, // 50
 
     // Light Patterns
     ANKI_VEHICLE_MSG_C2V_LIGHTS_PATTERN = 0x33,
@@ -77,11 +80,11 @@ enum {
     ANKI_VEHICLE_MSG_C2V_SDK_MODE = 0x90,
 
     // Additional Identifiers
-    ANKI_VEHICLE_MSG_V2C_TRACK_INTERSECTION = 0x2a,
     ANKI_VEHICLE_MSG_V2C_CAR_ERROR = 0x2a,
     ANKI_VEHICLE_MSG_V2C_CAR_COLLISION = 0x4d,
     ANKI_VEHICLE_MSG_V2C_CAR_MESSAGE_CYCLE_OVERTIME = 0x86,
-    ANKI_VEHICLE_MSG_C2V_CAR_CONFIGURATION = 0x45
+    ANKI_VEHICLE_MSG_C2V_CAR_CONFIGURATION = 0x45,
+    ANKI_VEHICLE_MSG_V2C_STATUS_UPDATE = 0x3f
 };
 
 #define ATTRIBUTE_PACKED  __attribute__((packed))
@@ -146,6 +149,27 @@ typedef struct anki_vehicle_msg_set_speed {
     uint8_t     _reserved;
 } ATTRIBUTE_PACKED anki_vehicle_msg_set_speed_t;
 #define ANKI_VEHICLE_MSG_C2V_SET_SPEED_SIZE  6
+
+typedef enum {
+  VEHICLE_TURN_NONE        = 0,
+  VEHICLE_TURN_LEFT        = 1,
+  VEHICLE_TURN_RIGHT       = 2,
+  VEHICLE_TURN_UTURN       = 3,
+  VEHICLE_TURN_UTURN_JUMP  = 4,
+} anki_vehicle_turn_type_t;
+
+typedef enum {
+  VEHICLE_TURN_TRIGGER_IMMEDIATE    = 0, // Run immediately
+  VEHICLE_TURN_TRIGGER_INTERSECTION = 1, // Run at the next intersection
+} anki_vehicle_turn_trigger_t;
+
+typedef struct anki_vehicle_msg_turn {
+    uint8_t     size;
+    uint8_t     msg_id;
+    uint8_t     type;
+    uint8_t     trigger;
+} ATTRIBUTE_PACKED anki_vehicle_msg_turn_t;
+#define ANKI_VEHICLE_MSG_C2V_TURN_SIZE 3
 
 typedef struct anki_vehicle_msg_set_offset_from_road_center {
     uint8_t     size;
@@ -235,17 +259,39 @@ typedef enum {
     EFFECT_COUNT
 } anki_vehicle_light_effect_t;
 
-typedef struct anki_vehicle_msg_lights_pattern {
-    uint8_t     size;
-    uint8_t     msg_id;
+typedef struct anki_vehicle_light_config {
     uint8_t     channel;
     uint8_t     effect;
     uint8_t     start;
     uint8_t     end;
-    uint16_t    cycles_per_min;
-} ATTRIBUTE_PACKED anki_vehicle_msg_lights_pattern_t;
-#define ANKI_VEHICLE_MSG_C2V_LIGHTS_PATTERN_SIZE    7
+    uint8_t     cycles_per_10_sec;
+} ATTRIBUTE_PACKED anki_vehicle_light_config_t;
 
+#define LIGHT_CHANNEL_COUNT_MAX 3
+typedef struct anki_vehicle_msg_lights_pattern {
+    uint8_t                         size;
+    uint8_t                         msg_id;
+    uint8_t                         channel_count;
+    anki_vehicle_light_config_t     channel_config[LIGHT_CHANNEL_COUNT_MAX];
+} ATTRIBUTE_PACKED anki_vehicle_msg_lights_pattern_t;
+#define ANKI_VEHICLE_MSG_C2V_LIGHTS_PATTERN_SIZE    17
+
+typedef enum anki_track_material {
+    TRACK_MATERIAL_PLASTIC,
+    TRACK_MATERIAL_VINYL,
+} anki_track_material_t;
+
+#define SUPERCODE_NONE          0
+#define SUPERCODE_BOOST_JUMP    1
+#define SUPERCODE_ALL           (SUPERCODE_BOOST_JUMP)
+
+typedef struct anki_vehicle_msg_set_config_params {
+    uint8_t     size;
+    uint8_t     msg_id;
+    uint8_t     super_code_parse_mask;
+    uint8_t     track_material;
+} ATTRIBUTE_PACKED anki_vehicle_msg_set_config_params_t;
+#define ANKI_VEHICLE_MSG_C2V_SET_CONFIG_PARAMS_SIZE 3
 
 /**
  * Create a message for setting the SDK mode.
@@ -322,6 +368,25 @@ uint8_t anki_vehicle_msg_change_lane(anki_vehicle_msg_t *msg,
 uint8_t anki_vehicle_msg_set_lights(anki_vehicle_msg_t *msg, uint8_t mask);
 
 /**
+ * Create a vehicle lights configuration.
+ *
+ * @param config A pointer to the light channel configuration.
+ * @param channel The target lights. See anki_vehicle_light_channel_t.
+ * @param effect The type of desired effect. See anki_vehicle_light_effect_t.
+ * @param start The starting intensity of the LED.
+ * @param end The end intensity of the LED.
+ * @param cycles_per_min The frequency repeated start->end transition phases (according to effect).
+ *
+ * @see anki_vehicle_light_channel_t, anki_vehicle_light_effect_t
+ */
+void anki_vehicle_light_config(anki_vehicle_light_config_t *config,
+                               anki_vehicle_light_channel_t channel,
+                               anki_vehicle_light_effect_t effect,
+                               uint8_t start,
+                               uint8_t end,
+                               uint16_t cycles_per_min);
+
+/**
  * Create a message to set a vehicle lights pattern.
  *
  * @param msg A pointer to the vehicle message struct to be written.
@@ -335,7 +400,25 @@ uint8_t anki_vehicle_msg_set_lights(anki_vehicle_msg_t *msg, uint8_t mask);
  *
  * @see anki_vehicle_light_channel_t, anki_vehicle_light_effect_t
  */
-uint8_t anki_vehicle_msg_lights_pattern(anki_vehicle_msg_t *message, uint8_t channel, uint8_t effect, uint8_t start, uint8_t end, uint16_t cycles_per_min);
+uint8_t anki_vehicle_msg_lights_pattern(anki_vehicle_msg_t *message,
+                                        anki_vehicle_light_channel_t channel,
+                                        anki_vehicle_light_effect_t effect,
+                                        uint8_t start,
+                                        uint8_t end,
+                                        uint16_t cycles_per_min);
+
+/**
+ * Create a message to set vehicle lights using light channel configurations.
+ *
+ * Up to 3 channel configurations can be added to a single lights_pattern message.
+ *
+ * @param message A pointer to the vehicle message struct to be written.
+ * @param config A pointer to the light channel config to append to the message.
+ *
+ * @return size of appended config object or zero if nothing was appended.
+ */
+uint8_t anki_vehicle_msg_lights_pattern_append(anki_vehicle_msg_lights_pattern_t* message,
+                                               anki_vehicle_light_config_t* config);
 
 /**
  * Create a message to request that the vehicle disconnect.
@@ -392,6 +475,22 @@ uint8_t anki_vehicle_msg_get_battery_level(anki_vehicle_msg_t *);
  * @return size of bytes written to msg
  */
 uint8_t anki_vehicle_msg_cancel_lane_change(anki_vehicle_msg_t *msg);
+
+/**
+ * Create a message to request a turn.
+ *
+ * @param msg A pointer to the vehicle message struct to be written.
+ * @param type Enum value specifying the type of turn to execute. (see `see anki_vehicle_turn_type_t`)
+ *             The default value is `VEHICLE_TURN_TYPE_NONE`, which is a no-op (no turn executed).
+ * @param trigger Enum value specifying when to execute the turn. (see `anki_vehicle_turn_trigger_t`)
+ *                The only supported value is currently `VEHICLE_TURN_TRIGGER_IMMEDIATE`,
+ *                which causes the turn to be executed immediately.
+ *
+ * @return size of bytes written to msg
+ */
+uint8_t anki_vehicle_msg_turn(anki_vehicle_msg_t *msg,
+                              anki_vehicle_turn_type_t type,
+                              anki_vehicle_turn_trigger_t trigger);
 
 /**
  * Create a message to request a 180 degree turn.

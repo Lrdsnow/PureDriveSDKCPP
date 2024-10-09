@@ -3,17 +3,19 @@
 #include <cstring>
 #include <thread>
 #include <chrono>
-#include <gattlib.h>
+#include <simpleble/SimpleBLE.h>
 #include <sstream>
+#include <tuple>
+
 
 // get car name
-std::string getCarName(uint8_t modelId);
+std::string getCarName(const std::string& modelId);
 
 // get track name
 std::string getTrackName(uint8_t trackId);
 
-// gattlib error handling
-std::string getGattlibErrorString(int error_code);
+// filter duplicate tracks
+std::vector<std::tuple<std::string, bool, int>> filterDuplicates(const std::vector<std::tuple<std::string, bool, int>>& readings);
 
 enum class PeripheralState {
     Disconnected,

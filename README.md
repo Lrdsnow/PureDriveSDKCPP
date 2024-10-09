@@ -1,6 +1,7 @@
-# PureDriveSDKLinux
-- Anki Overdrive SDK but for Linux
-the og one works just fine on linux but i need this for PureDrive
+# PureDriveSDKCPP
+- Anki Overdrive SDK rewritten in C++ for PureDrive
 
-### Warning:
-- this is a mess rn
+### how to use:
+- build and install SimpleBLE from https://github.com/OpenBluetoothToolbox/SimpleBLE
+- run `make lib` to build a library
+- enjoy!
