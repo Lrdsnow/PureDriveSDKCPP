@@ -17,34 +17,23 @@
 #include <simpleble/SimpleBLE.h>
 #include "anki_sdk/protocol.h"
 
-// Forward declaration of VehicleDelegate
 class VehicleDelegate;
 
-// BluetoothManager Class Definition
 class BluetoothManager {
 private:
     std::thread scanThread;
     std::atomic<bool> isScanning;
     std::vector<std::unique_ptr<VehicleDelegate>> discoveredVehicles;
-    
-    // UUID for the Anki service
     SimpleBLE::BluetoothUUID ankiServiceUUID{"be15beef-6186-407e-8381-0bd89c4d8df4"};
-
-    // Scanning loop for Bluetooth devices
     void scanLoop();
 
 public:
     BluetoothManager();
     ~BluetoothManager();
-    
-    // Start scanning for Bluetooth devices
     void startScanning();
-    
-    // Stop scanning for Bluetooth devices
     void stopScanning();
 };
 
-// VehicleDelegate Class Definition
 class VehicleDelegate {
 public:
     SimpleBLE::Peripheral peripheral;
@@ -63,7 +52,6 @@ public:
     SimpleBLE::BluetoothUUID ankiChrReadUUID{"be15bee0-6186-407e-8381-0bd89c4d8df4"};
     SimpleBLE::BluetoothUUID ankiChrWriteUUID{"be15bee1-6186-407e-8381-0bd89c4d8df4"};
 
-    // Enumerations
     enum class VehicleLightChannel : uint32_t {
         Red = 0,
         Tail = 1,
@@ -83,10 +71,8 @@ public:
         Count = 5
     };
 
-    // Constructor
     VehicleDelegate(void* controller, SimpleBLE::Peripheral peripheral, VehicleAdvData advData);
 
-    // Public methods
     bool isActive() const;
     void setSDKMode(bool on, uint8_t flags);
     void setOffsetFromRoadCenter(float offset);
