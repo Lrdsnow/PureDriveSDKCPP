@@ -87,7 +87,13 @@ enum {
     ANKI_VEHICLE_MSG_V2C_STATUS_UPDATE = 0x3f
 };
 
-#define ATTRIBUTE_PACKED  __attribute__((packed))
+#ifdef _MSC_VER  // Microsoft compiler
+  #define ATTRIBUTE_PACKED __pragma(pack(push, 1))
+  #define ATTRIBUTE_PACKED_END __pragma(pack(pop))
+#else  // GCC or Clang
+  #define ATTRIBUTE_PACKED __attribute__((packed))
+  #define ATTRIBUTE_PACKED_END
+#endif
 
 /**
  * Basic vehicle message.
